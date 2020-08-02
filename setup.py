@@ -1,9 +1,3 @@
-'''
-setup.py is the build script for setuptools. It tells setuptools about your package (such as the name and version) as well as which code files to include.
-
-Open setup.py and enter the following content. Update the package name to include your username (for example, example-pkg-theacodes), this ensures that you have a unique package name and that your package doesn’t conflict with packages uploaded by other people following this tutorial.
-# https://packaging.python.org/tutorials/packaging-projects/
-'''
 import setuptools
 
 with open("README.md", "r") as fh:
