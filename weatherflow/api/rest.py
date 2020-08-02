@@ -1,53 +1,53 @@
 import requests
 
 # Define data formats so we can convert observations from integer arrays to dictionaries
-_OBS_AIR = ('timestamp',
-            'barometric_pressure',
-            'air_temperature',
-            'relative_humidity',
-            'lightning_strike_count',
-            'lightning_strike_avg_distance',
-            'battery_volts',
-            'report_interval')
-_OBS_SKY = ('timestamp',
-            'brightness',
-            'uv',
-            'precip_accum_last_1hr',
-            'wind_lull',
-            'wind_avg',
-            'wind_gust',
-            'wind_direction',
-            'battery_volts',
-            'report_interval',
-            'solar_radiation',
-            'precip_accum_local_day',
-            'precip_type',
-            'wind_interval',
-            'precip_accum_local_yesterday_final',
-            'precip_minutes_local_yesterday_final',
-            'precip_analyze_type')
-_OBS_ST =  ('timestamp',
-            'wind_lull',
-            'wind_avg',
-            'wind_gust',
-            'wind_direction',
-            'wind_interval',
-            'barometric_pressure',
-            'air_temperature',
-            'relative_humidity',
-            'brightness',
-            'uv',
-            'solar_radiation',
-            'precip_accum_last_1hr',
-            'precip_type',
-            'lightning_strike_avg_distance',
-            'lightning_strike_count',
-            'battery_volts',
-            'report_interval',
-            'precip_accum_local_day',
-            'precip_accum_local_yesterday_final',
-            'precip_minutes_local_yesterday_final',
-            'precip_analyze_type')
+_DATA_FORMAT = {'obs_air': ('timestamp',
+                            'barometric_pressure',
+                            'air_temperature',
+                            'relative_humidity',
+                            'lightning_strike_count',
+                            'lightning_strike_avg_distance',
+                            'battery_volts',
+                            'report_interval'),
+                'obs_sky': ('timestamp',
+                            'brightness',
+                            'uv',
+                            'precip_accum_last_1hr',
+                            'wind_lull',
+                            'wind_avg',
+                            'wind_gust',
+                            'wind_direction',
+                            'battery_volts',
+                            'report_interval',
+                            'solar_radiation',
+                            'precip_accum_local_day',
+                            'precip_type',
+                            'wind_interval',
+                            'precip_accum_local_yesterday_final',
+                            'precip_minutes_local_yesterday_final',
+                            'precip_analyze_type'),
+                'obs_st':  ('timestamp',
+                            'wind_lull',
+                            'wind_avg',
+                            'wind_gust',
+                            'wind_direction',
+                            'wind_interval',
+                            'barometric_pressure',
+                            'air_temperature',
+                            'relative_humidity',
+                            'brightness',
+                            'uv',
+                            'solar_radiation',
+                            'precip_accum_last_1hr',
+                            'precip_type',
+                            'lightning_strike_avg_distance',
+                            'lightning_strike_count',
+                            'battery_volts',
+                            'report_interval',
+                            'precip_accum_local_day',
+                            'precip_accum_local_yesterday_final',
+                            'precip_minutes_local_yesterday_final',
+                            'precip_analyze_type')}
 
 
 class Rest:
@@ -247,15 +247,7 @@ class Rest:
         :return: Dictionary containing observation
         """
         retobj = {}
-        dkeys = ()
-        if obs_type == 'obs_air':
-            dkeys = _OBS_AIR
-        elif obs_type == 'obs_sky':
-            dkeys = _OBS_SKY
-        elif obs_type == 'obs_st':
-            dkeys = _OBS_ST
-        else:
-            raise UsageError("Invalid observation type specified")
+        dkeys = _DATA_FORMAT[obs_type]
 
         for i, key in enumerate(dkeys, start=0):
             retobj[key] = obs[i]
