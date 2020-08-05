@@ -2,20 +2,12 @@
 Classes for communicating to the various WeatherFlow APIs
 
 ## Security
-WeatherFlow utilizes an implicit grant type for their Swagger implementation but they
-do not yet have a self service capability for obtaining access tokens.
+WeatherFlow can authorize requests using either:
+* Access tokens - used for accessing your private stations and public stations
+* API key - used for accessing public stations
 
-Hence, the to obtan an access token currently:
-1. Visit [WeatherFlow Swagger documentation page](https://weatherflow.github.io/SmartWeather/api/swagger/)
-2. Click the `Authorize` button on the top right
-3. Select the `user` scope
-4. Click the `Authorize` button
-4. Click the `Allow` button
-5. Scroll down to Stations and click `Stations`
-6. Click `GET /Stations`
-7. Scroll down and click `Try it out!`
-8. Under the Curl example request, obtain the access token from the `Authorization` header `Bearer` token value 
-
+To obtain an access token visit [WeatherFlow Data Authorizations](https://tempestwx.com/settings/tokens),
+sign in as your account, and then create a new token (or utilize an existing one).
 
 ## Classes
 
