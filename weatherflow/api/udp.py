@@ -35,7 +35,8 @@ class Udp:
     def start(self, bind_address='', udp_port=_UDP_PORT):
         """
         Opens the network socket and starts the listening thread, called automatically during construction
-        :param bind_address:
+        :param bind_address: IP address of interface to listen on (default is all)
+        :param udp_port: UDP port to listen on
         :return: Nothing
         """
         # Make sure someone does not try to start the listener twice
@@ -57,13 +58,12 @@ class Udp:
             except:
                 raise UdpError("Issue listening on socket for UDP broadcast traffic")
 
+            # Latest data will be dict of object types containing dict with keys data, timestamp, fetched
+            self.latest_data = {}
+
             # Start listening
-            self.latest_data_raw = ""
-            self.latest_data_time = None
-            self.latest_data_fetched = True
             self.run_thread = True
             self.thread_exception = None
-
             self.listen_thread = threading.Thread(target=self._listen, name=self._thread_name, daemon=True)
 
             if self.debug:
@@ -120,40 +120,56 @@ class Udp:
                 raise self.thread_exception
 
             # Convert received data from bytes to string
-            self.latest_data_raw = data.decode()
+            raw_data = data.decode()
             if self.debug:
-                print("(%s) Received: %s" % (self._thread_name, self.latest_data_raw))
+                print("(%s) Received: %s" % (self._thread_name, raw_data))
 
-            # Record when we received data (used for determining if we need to read again)
-            self.latest_data_time = time.time()
-
-            # Update flag to indicate new data exists
-            self.latest_data_fetched = False
+            # Store data as structure for its object type
+            data = json.loads(raw_data)
+            if 'type' in data:
+                data_type = data['type']
+                self.latest_data[data_type] = {'data': data, 'timestamp': time.time(), 'fetched': False}
+                self.latest_data['most_recent'] = data_type
 
         if self.debug:
             print("Listener thread stopped")
 
-    def new_data_available(self):
+    def new_data_available(self, data_type='most_recent'):
         """
         Is new data available?
+        :param data_type: Which object type do we want to see if data is available for (or default to most recent data)
         :return: True if yes, false if no
         """
-        if self.latest_data_fetched:
-            # Has listener thread thrown an exception?  If so we need to pass onto main program.
-            if self.thread_exception:
-                raise self.thread_exception
-            return False
-        else:
-            return True
+        # Has listener thread thrown an exception?  If so we need to pass onto main program.
+        if self.thread_exception:
+            raise self.thread_exception
 
-    def get_latest_data(self):
+        # If we want most recent data switch data type to what was most recent
+        if data_type == 'most_recent' and data_type in self.latest_data:
+            data_type = self.latest_data[data_type]
+
+        # Return if data has not been fetched, otherwise we have no data just return False
+        if data_type in self.latest_data:
+            return not self.latest_data[data_type]['fetched']
+        else:
+            return False
+
+    def get_latest_data(self, data_type='most_recent'):
         """
         Return latest data as regular Python structured and record that latest data has been fetched
-        :return: Latest data as Python structure
+        :param data_type: Which object type do we want to see if data is available for (or default to most recent data)
+        :return: Latest data as Python structure (or None if there is no data yet)
         """
-        #
-        self.latest_data_fetched = True
-        return json.loads(self.latest_data_raw)
+        # If we want most recent data switch data type to what was most recent
+        if data_type == 'most_recent' and data_type in self.latest_data:
+            data_type = self.latest_data[data_type]
+
+        # Return data, otherwise we have no data just return None
+        if data_type in self.latest_data:
+            self.latest_data[data_type]['fetched'] = True
+            return self.latest_data[data_type]['data']
+        else:
+            return None
 
 
 class UdpError(Exception):

@@ -109,3 +109,6 @@ vcs.xml
 # PyCharm
 .DS_Store/
 .idea/
+
+# Visual Studio Code
+.vscode/
