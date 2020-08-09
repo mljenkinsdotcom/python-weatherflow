@@ -119,11 +119,17 @@ class Udp:
                 print("(%s) Received: %s" % (self._thread_name, raw_data))
 
             # Store data as structure for its object type
-            data = json.loads(raw_data)
-            if 'type' in data:
+            try:
+                data = json.loads(raw_data)
+            except:
+                raise UdpParseError('Issue parsing JSON received from WeatherFlow bridge UDP stream')
+
+            if data and 'type' in data:
                 data_type = data['type']
                 self.latest_data[data_type] = {'data': data, 'timestamp': time.time(), 'fetched': False}
                 self.latest_data['most_recent'] = data_type
+            else:
+                raise UdpParseError('UDP data received from WeatherFlow bridge has no field type')
 
         if self.debug:
             print("Listener thread stopped")
@@ -171,4 +177,8 @@ class Udp:
 
 
 class UdpError(Exception):
+    pass
+
+
+class UdpParseError(Exception):
     pass

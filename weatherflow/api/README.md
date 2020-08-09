@@ -35,9 +35,13 @@ Methods:
  
 
 Exceptions:
-* `RestError` - Issues from WeatherFlow API
-* `UsageError` - Issues due to misuse of Rest class
-
+* `RestError` - Issues from WeatherFlow API, for example if the service is down, the api key or access token is
+incorrect, etc.
+* `UDPError` - Issues with the UDP API, primarily caused by not being able to open the network socket or listen
+* `UdpParseError` - Data parsing issues, could be caused by data corruption coming from WeatherFlow APIs.
+These errors can be typically safely ignored unless they come in masses, we just ignore this bad data.
+* `DataFormatError` - Issues if there are data parsing issues, which could occur if the WeatherFlow API
+unexpectedly changes or if there is data corruption in transit 
 
 ### Websocket
 Used for obtaining real time data from WeatherFlow API

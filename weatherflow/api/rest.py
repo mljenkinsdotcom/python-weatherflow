@@ -33,7 +33,7 @@ class Rest:
         elif api_key:
             self.base_params['api_key'] = api_key
         else:
-            raise UsageError('No REST credentials specified')
+            raise RestError('No REST credentials specified')
 
         # Set default values if provided
         self.station_id = station_id
@@ -81,7 +81,11 @@ class Rest:
         if format:
             params['format'] = format
 
-        result = self._get(url, headers=headers, params=params).json()
+        result = self._get(url, headers=headers, params=params)
+        try:
+            result = result.json()
+        except:
+            raise RestError('Issue parsing JSON received from WeatherFlow API: ' + result)
 
         if auto_add_data_keys:
             return add_data_keys(result, 'rest')
@@ -110,7 +114,13 @@ class Rest:
         params = self.base_params
 
         result = self._get(url, headers=headers, params=params)
-        return result.json()
+
+        try:
+            result = result.json()
+        except:
+            raise RestError('Issue parsing JSON received from WeatherFlow API: ' + result)
+
+        return result
 
     def get_stations(self):
         """
@@ -126,7 +136,13 @@ class Rest:
         params = self.base_params
 
         result = self._get(url, headers=headers, params=params)
-        return result.json()
+
+        try:
+            result = result.json()
+        except:
+            raise RestError('Issue parsing JSON received from WeatherFlow API: ' + result)
+
+        return result
 
     def get_station(self, station_id=None):
         """
@@ -147,7 +163,13 @@ class Rest:
         params = self.base_params
 
         result = self._get(url, headers=headers, params=params)
-        return result.json()
+
+        try:
+            result = result.json()
+        except:
+            raise RestError('Issue parsing JSON received from WeatherFlow API: ' + result)
+
+        return result
 
     def _get(self, url, headers=None, params=None):
         """
@@ -191,8 +213,4 @@ class Rest:
 
 
 class RestError(Exception):
-    pass
-
-
-class UsageError(Exception):
     pass

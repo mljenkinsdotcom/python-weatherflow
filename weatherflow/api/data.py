@@ -50,108 +50,54 @@ REST_DATA_FORMAT = {'obs_air': {'obs': (    'timestamp',
 # TODO: Define format for Websocket fields so we can convert data from integer arrays to dictionaries (e.g. observation data)
 WS_DATA_FORMAT = {}
 
-# TODO: Define format for UDP fields so we can convert data from integer arrays to dictionaries (e.g. observation data)
-UDP_DATA_FORMAT = {'rapid_wind': {'ob': ('timestamp', 'wind_gust', 'wind_direction')}}
+UDP_DATA_FORMAT = {'rapid_wind': {'ob': ('timestamp', 'wind_gust', 'wind_direction')},
+                   'evt_strike': {'evt': ('timestamp', 'lightning_strike_avg_distance', 'lightning_strike_energy')},
+                   'hub_status': {'radio_stats': ('version',
+                                                  'reboot_count',
+                                                  'i2c_bus_error_count',
+                                                  'radio_status',
+                                                  'radio_network_id')},
+                   'obs_st': { 'obs': (     'timestamp',
+                                            'wind_lull',
+                                            'wind_avg',
+                                            'wind_gust',
+                                            'wind_direction',
+                                            'wind_interval',
+                                            'barometric_pressure',
+                                            'air_temperature',
+                                            'relative_humidity',
+                                            'brightness',
+                                            'uv',
+                                            'solar_radiation',
+                                            'precip_accum_last_1hr',
+                                            'precip_type',
+                                            'lightning_strike_avg_distance',
+                                            'lightning_strike_count',
+                                            'battery_volts',
+                                            'report_interval')},
+                   'obs_sky': { 'obs': (    'timestamp',
+                                            'brightness',
+                                            'uv',
+                                            'precip_accum_last_1hr',
+                                            'wind_lull',
+                                            'wind_avg',
+                                            'wind_gust',
+                                            'wind_direction',
+                                            'battery_volts',
+                                            'report_interval',
+                                            'solar_radiation',
+                                            'precip_accum_local_day',
+                                            'precip_type',
+                                            'wind_interval')},
+                   'obs_air': { 'obs': (    'timestamp',
+                                            'barometric_pressure',
+                                            'air_temperature',
+                                            'relative_humidity',
+                                            'lightning_strike_count',
+                                            'lightning_strike_avg_distance',
+                                            'battery_volts',
+                                            'report_interval')}}
 
-
-# TODO: Update values for UDP format
-"""
-obs_st
-Index	Field	Units
-0	Time Epoch	Seconds
-1	Wind Lull (minimum 3 second sample)	m/s
-2	Wind Avg (average over report interval)	m/s
-3	Wind Gust (maximum 3 second sample)	m/s
-4	Wind Direction	Degrees
-5	Wind Sample Interval	seconds
-6	Station Pressure	MB
-7	Air Temperature	C
-8	Relative Humidity	%
-9	Illuminance	Lux
-10	UV	Index
-11	Solar Radiation	W/m^2
-12	Precip Accumulated	mm
-13	Precipitation Type	0 = none, 1 = rain, 2 = hail
-14	Lightning Strike Avg Distance	km
-15	Lightning Strike Count	
-16	Battery	Volts
-17	Report Interval	Minutes
-
-obs_sky
-Index	Field	Units
-0	Time Epoch	Seconds
-1	Illuminance	Lux
-2	UV	Index
-3	Rain Accumulated	mm
-4	Wind Lull (minimum 3 second sample)	m/s
-5	Wind Avg (average over report interval)	m/s
-6	Wind Gust (maximum 3 second sample)	m/s
-7	Wind Direction	Degrees
-8	Battery	Volts
-9	Report Interval	Minutes
-10	Solar Radiation	W/m^2
-11	Local Day Rain Accumulation	mm
-12	Precipitation Type	0 = none, 1 = rain, 2 = hail
-13	Wind Sample Interval	seconds
-
-obs_air
-Index	Field	Units
-0	Time Epoch	Seconds
-1	Station Pressure	MB
-2	Air Temperature	C
-3	Relative Humidity	%
-4	Lightning Strike Count	
-5	Lightning Strike Avg Distance	km
-6	Battery	
-7	Report Interval	Minutes
-
-------------------------------
-evt_strike evt data format
-Index	Field	Units
-0	Time Epoch	Seconds
-1	Distance	km
-2	Energy	
-
-------------------------------
-device_status sensor_status values
-Sensor Status (sensor_status) is a set of bit flags, encoded in a single decimal value, each bit represents the following
-Binary Value	Applies to device	Status description
-0b000000000	All	Sensors OK
-0b000000001	AIR, Tempest	lightning failed
-0b000000010	AIR, Tempest	lightning noise
-0b000000100	AIR, Tempest	lightning disturber
-0b000001000	AIR, Tempest	pressure failed
-0b000010000	AIR, Tempest	temperature failed
-0b000100000	AIR, Tempest	rh failed
-0b001000000	SKY, Tempest	wind failed
-0b010000000	SKY, Tempest	precip failed
-0b100000000	SKY, Tempest	light/uv failed
-
-------------------------------
-device_status debug values
-Value	Description
-0	Debugging is disabled
-1	Debugging is enabled
-
-------------------------------
-hub_status reset_flags values
-Value	Description
-BOR	Brownout reset
-PIN	PIN reset
-POR	Power reset
-SFT	Software reset
-WDG	Watchdog reset
-WWD	Window watchdog reset
-LPW	Low-power reset
-
-------------------------------
-hub_status radio_stats values
-0	Version
-1	Reboot Count
-2	I2C Bus Error Count
-3	Radio Status (0 = Radio Off, 1 = Radio On, 3 = Radio Active)
-4	Radio Network ID
-"""
 
 # Define what type of data various field names have, used for determining how to convert data to current locale
 FIELD_TYPES = { 'timestamp': 'epoch',
@@ -205,8 +151,17 @@ def convert_list(data, value_names):
     :param value_names: List of names to use as keys for each value in the array
     :return: Dictionary containing values with keys defining values
     """
+    # Ensure data format is correct
+    if len(data) != len(value_names):
+        raise DataFormatError("Data format for list is incorrect, expected %d values but received %d" %
+                              (len(value_names), len(data)))
+
     new_data = {}
     for i, key in enumerate(value_names):
         new_data[key] = data[i]
 
     return new_data
+
+
+class DataFormatError(Exception):
+    pass
