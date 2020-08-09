@@ -9,6 +9,19 @@ WeatherFlow can authorize requests using either:
 To obtain an access token visit [WeatherFlow Data Authorizations](https://tempestwx.com/settings/tokens),
 sign in as your account, and then create a new token (or utilize an existing one).
 
+## Data
+WeatherFlow returns many data types as lists of integers.  To make this data more useful, most methods within
+this API will auto convert these lists to dictionaries and assign each value a unique key.  You can disable
+this by setting the method parameter `auto_add_data_keys` to `False` where the parameter exists on a function.
+
+By assigning unique keys to all value types, we define which data types all possible key values are.  This allows
+us to then know how to convert the data to the locale of the calling application as set by the developer.  It also
+allows us to use the data by external applications without these applications needing to know the WeatherFlow data
+format.
+
+By auto converting the data by default, it should speed up development utilizing the WeatherFlow APIs since the
+data will be self documented.
+
 ## Classes
 
 ### Rest
