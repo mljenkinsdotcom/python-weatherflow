@@ -1,20 +1,14 @@
 from socket import *
-import threading, time, sys, json
+import threading, time, json
+from .data import add_data_keys
 
+# Define valid data types to document API and so calling application can be aware if needed
+VALID_DATA_TYPES = ('evt_precip', 'evt_strike', 'rapid_wind', 'obs_air', 'obs_sky', 'obs_st', 'device_status',
+                    'hub_status')
+
+# Define UDP API parameters
 _UDP_VERSION = 143
 _UDP_PORT = 50222
-
-"""
-Valid returned data types:
-    evt_precip
-    evt_strike
-    rapid_wind
-    obs_air
-    obs_sky
-    obs_st
-    device_status
-    hub_status
-"""
 
 
 class Udp:
@@ -154,10 +148,11 @@ class Udp:
         else:
             return False
 
-    def get_latest_data(self, data_type='most_recent'):
+    def get_latest_data(self, data_type='most_recent', auto_add_data_keys=True):
         """
         Return latest data as regular Python structured and record that latest data has been fetched
         :param data_type: Which object type do we want to see if data is available for (or default to most recent data)
+        :param auto_add_data_keys: If true, data arrays will be converted from integer arrays to dictionaries
         :return: Latest data as Python structure (or None if there is no data yet)
         """
         # If we want most recent data switch data type to what was most recent
@@ -167,7 +162,10 @@ class Udp:
         # Return data, otherwise we have no data just return None
         if data_type in self.latest_data:
             self.latest_data[data_type]['fetched'] = True
-            return self.latest_data[data_type]['data']
+            if auto_add_data_keys:
+                return add_data_keys(self.latest_data[data_type]['data'], 'udp')
+            else:
+                return self.latest_data[data_type]['data']
         else:
             return None
 

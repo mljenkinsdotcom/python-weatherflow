@@ -1,89 +1,46 @@
 import requests
+from .data import add_data_keys
 
-# Define data formats so we can convert observations from integer arrays to dictionaries
-_DATA_FORMAT = {'obs_air': ('timestamp',
-                            'barometric_pressure',
-                            'air_temperature',
-                            'relative_humidity',
-                            'lightning_strike_count',
-                            'lightning_strike_avg_distance',
-                            'battery_volts',
-                            'report_interval'),
-                'obs_sky': ('timestamp',
-                            'brightness',
-                            'uv',
-                            'precip_accum_last_1hr',
-                            'wind_lull',
-                            'wind_avg',
-                            'wind_gust',
-                            'wind_direction',
-                            'battery_volts',
-                            'report_interval',
-                            'solar_radiation',
-                            'precip_accum_local_day',
-                            'precip_type',
-                            'wind_interval',
-                            'precip_accum_local_yesterday_final',
-                            'precip_minutes_local_yesterday_final',
-                            'precip_analyze_type'),
-                'obs_st':  ('timestamp',
-                            'wind_lull',
-                            'wind_avg',
-                            'wind_gust',
-                            'wind_direction',
-                            'wind_interval',
-                            'barometric_pressure',
-                            'air_temperature',
-                            'relative_humidity',
-                            'brightness',
-                            'uv',
-                            'solar_radiation',
-                            'precip_accum_last_1hr',
-                            'precip_type',
-                            'lightning_strike_avg_distance',
-                            'lightning_strike_count',
-                            'battery_volts',
-                            'report_interval',
-                            'precip_accum_local_day',
-                            'precip_accum_local_yesterday_final',
-                            'precip_minutes_local_yesterday_final',
-                            'precip_analyze_type')}
+# Define REST API parameters
+_REST_BASE_URL = 'https://swd.weatherflow.com/swd/rest'
 
 
 class Rest:
-    def __init__(self, access_token=None, api_key=None, station_id=None, device_id=None, debug=False):
+    def __init__(self, access_token=None, api_key=None, station_id=None, device_id=None, base_url=_REST_BASE_URL,
+                 debug=False):
         """
         This classes utilizes the WeatherFlow REST API and requires an api key or oauth token to connect
         :param access_token: private user oauth access (bearer) token for user from oauth2 implicit flow
         :param api_key: api key for acquiring public data
         :param station_id: default station id to make requests for (to avoid having to pass each time)
         :param device_id: default device id to make requests for (to avoid having to pass each time)
+        :param base_url Base URL of WeatherFlow REST API to use
         :param debug: Enable HTTP debugging for low-level troubleshooting
         """
         self.debug = debug
         if debug:
             self._enable_requests_debug()
-            print("Constructing REST class")
+            print('Constructing REST class')
 
         # WeatherFlow REST API parameters
-        self.baseurl = 'https://swd.weatherflow.com/swd/rest'
-        self.baseheaders = {'Accept': 'application/json'}
-        self.baseparams = {}
+        self.base_url = base_url
+        self.base_headers = {'Accept': 'application/json'}
+        self.base_params = {}
 
         # Deal with security (authorization)
         if access_token:
-            self.baseheaders['Authorization'] = "Bearer " + access_token
+            self.base_headers['Authorization'] = 'Bearer ' + access_token
         elif api_key:
-            self.baseparams['api_key'] = api_key
+            self.base_params['api_key'] = api_key
         else:
-            raise UsageError("No REST credentials specified")
+            raise UsageError('No REST credentials specified')
 
         # Set default values if provided
         self.station_id = station_id
         self.device_id = device_id
 
     def get_device_observations(self, device_id=None, day_offset=None, time_start=None, time_end=None, format=None,
-                                auto_convert=True):
+                                auto_add_data_keys=True):
         """
         Get observations for a Device(Air,Sky,Tempest) by using the device_id as the key. You can find device_id values
         in the response from the Stations service You can get observations using several filters
@@ -106,15 +63,15 @@ class Rest:
                             This field pair is optional.
                             If the request does not contain any time filters only the latest observation is returned
         :param format: Use format=csv to return a CSV response type.
-        :param auto_convert: If true, observations will be converted from an array of integers to a dictionary
+        :param auto_add_data_keys: If true, data arrays will be converted from integer arrays to dictionaries
         :return: JSON from WeatherFlow API
         """
         if not device_id:
             device_id = self.device_id
 
-        url = self.baseurl + '/observations/device/' + str(device_id)
-        headers = self.baseheaders
-        params = self.baseparams
+        url = self.base_url + '/observations/device/' + str(device_id)
+        headers = self.base_headers
+        params = self.base_params
         if day_offset:
             params['day_offset'] = day_offset
         if time_start:
@@ -124,18 +81,12 @@ class Rest:
         if format:
             params['format'] = format
 
-        r = self._get(url, headers=headers, params=params)
-        pr = r.json()
+        result = self._get(url, headers=headers, params=params).json()
 
-        # Auto convert observation data from array of integers to dictionary
-        if auto_convert:
-            obsdata = pr['obs']
-            obstype = pr['type']
-            pr['obs'] = []
-            for obs in obsdata:
-                pr['obs'].append(self.convert_obs(obs, obstype))
-
-        return pr
+        if auto_add_data_keys:
+            return add_data_keys(result, 'rest')
+        else:
+            return result
 
     def get_station_observation(self, station_id=None):
         """
@@ -154,12 +105,12 @@ class Rest:
         if not station_id:
             station_id = self.station_id
 
-        url = self.baseurl + '/observations/station/' + str(station_id)
-        headers = self.baseheaders
-        params = self.baseparams
+        url = self.base_url + '/observations/station/' + str(station_id)
+        headers = self.base_headers
+        params = self.base_params
 
-        r = self._get(url, headers=headers, params=params)
-        return r.json()
+        result = self._get(url, headers=headers, params=params)
+        return result.json()
 
     def get_stations(self):
         """
@@ -170,12 +121,12 @@ class Rest:
         that Device is no longer active.
         :return: JSON from WeatherFlow API
         """
-        url = self.baseurl + '/stations'
-        headers = self.baseheaders
-        params = self.baseparams
+        url = self.base_url + '/stations'
+        headers = self.base_headers
+        params = self.base_params
 
-        r = self._get(url, headers=headers, params=params)
-        return r.json()
+        result = self._get(url, headers=headers, params=params)
+        return result.json()
 
     def get_station(self, station_id=None):
         """
@@ -191,12 +142,12 @@ class Rest:
         if not station_id:
             station_id = self.station_id
 
-        url = self.baseurl + '/stations/' + str(station_id)
-        headers = self.baseheaders
-        params = self.baseparams
+        url = self.base_url + '/stations/' + str(station_id)
+        headers = self.base_headers
+        params = self.base_params
 
-        r = self._get(url, headers=headers, params=params)
-        return r.json()
+        result = self._get(url, headers=headers, params=params)
+        return result.json()
 
     def _get(self, url, headers=None, params=None):
         """
@@ -207,14 +158,14 @@ class Rest:
         :return: Results of request
         """
         try:
-            r = requests.get(url, headers=headers, params=params)
+            result = requests.get(url, headers=headers, params=params)
         except:
             raise RestError
 
-        if r.status_code == 200:
-            return r
+        if result.status_code == 200:
+            return result
         else:
-            raise RestError("WeatherFlow REST Get Error StatusCode=%s Reason=%s" % (r.status_code, r.reason))
+            raise RestError('WeatherFlow REST Get Error StatusCode=%s Reason=%s' % (result.status_code, result.reason))
 
     @staticmethod
     def _enable_requests_debug():
@@ -234,25 +185,9 @@ class Rest:
         # You must initialize logging, otherwise you'll not see debug output.
         logging.basicConfig()
         logging.getLogger().setLevel(logging.DEBUG)
-        requests_log = logging.getLogger("requests.packages.urllib3")
+        requests_log = logging.getLogger('requests.packages.urllib3')
         requests_log.setLevel(logging.DEBUG)
         requests_log.propagate = True
-
-    @staticmethod
-    def convert_obs(obs, obs_type):
-        """
-        Convert an observation from an array of integers to a dictionary
-        :param obs: Observation obtained from WeatherFlow API to convert
-        :param obs_type: Observation type as obtained from WeatherFlow API (obs_air, obs_sky, obs_st)
-        :return: Dictionary containing observation
-        """
-        retobj = {}
-        dkeys = _DATA_FORMAT[obs_type]
-
-        for i, key in enumerate(dkeys, start=0):
-            retobj[key] = obs[i]
-
-        return retobj
 
 
 class RestError(Exception):
